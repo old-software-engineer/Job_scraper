@@ -74,7 +74,7 @@ def send_mail(_mail, currentSubject,currentMsg):
         msg["From"] = "sharma.paras4444@gmail.com"
         msg["To"] = _mail
         msg["Subject"] = currentSubject
-        msg.attach(MIMEText(message, "html"))
+        msg.attach(MIMEText(message, 'html'))
         server = smtplib.SMTP(smtphost)
         server.starttls()
         server.login(username, password)
@@ -696,19 +696,29 @@ try:
 
     summary.write('Inserting records into database....' + '\n')
     insert_records_into_db(data)
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Success', 'Scraping script has been completed.')
+    msg = f"""Scraping script has been completed.
+                  <br/> Total Jobs checked : {with_url + without_url}
+                  <br/> Jobs Fetched : {with_url}"""
+    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Success', msg)
 
-except (TimeoutException,ElementNotInteractableException,ElementClickInterceptedException,NoSuchElementException) as exception:
+except (TimeoutException, ElementNotInteractableException, ElementClickInterceptedException,
+        NoSuchElementException) as exception:
     # insert fetched records in database.
     if exception is None or exception == '':
         exception = 'Unknown exception'
-    summary.write('Exception in script : '+ str(exception) + '\n')
+    summary.write('Exception in script' + str(exception) + '\n')
     insert_records_into_db(data)
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Error', 'Please rerun the script to continue scraping.')
+    msg = f"""Please rerun the script to continue scraping.
+                  <br/> Total Jobs checked : {with_url + without_url}
+                  <br/> Jobs Fetched : {with_url}"""
+    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Error', msg)
 except:
     summary.write('Inside exception 2' + '\n')
     insert_records_into_db(data)
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Error','Please rerun the script to continue scraping.')
+    msg = f"""Please rerun the script to continue scraping.
+                      <br/> Total Jobs checked : {with_url + without_url}
+                      <br/> Jobs Fetched : {with_url}"""
+    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Error', msg)
 
 finally:
     log.close()
