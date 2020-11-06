@@ -9,7 +9,8 @@ import urllib.request as urllib
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
+from email.mime.base import MIMEBase
+from email import encoders
 
 # ***************  For developer use only  **************
 
@@ -75,6 +76,29 @@ def send_mail(_mail, currentSubject,currentMsg):
         msg["To"] = _mail
         msg["Subject"] = currentSubject
         msg.attach(MIMEText(message, 'html'))
+
+
+        # -------------INCLUDE THIS FOR ATTACHMENT------------------
+        # open the file to be sent
+        filename = "summary.log"
+        attachment = open("summary.log", "rb")
+
+        # instance of MIMEBase and named as p
+        p = MIMEBase('application', 'octet-stream')
+
+        # To change the payload into encoded form
+        p.set_payload((attachment).read())
+
+        # encode into base64
+        encoders.encode_base64(p)
+
+        p.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+        # attach the instance 'p' to instance 'msg'
+        msg.attach(p)
+
+        # -------------INCLUDE THIS FOR ATTACHMENT ENDS------------------
+
         server = smtplib.SMTP(smtphost)
         server.starttls()
         server.login(username, password)
@@ -95,7 +119,8 @@ def getJobsDiv(driver, num):
         if (len(job_divs) == 0):
             time.sleep(1)
             results = no_results_check(driver)
-            if results == 'no_reults':
+            summary.write('Checking if there are any jobs for this keyword : ' + results)
+            if results == 'no_results':
                 return 'no_jobs'
             return getJobsDiv(driver, num+1)
         else:
@@ -129,7 +154,7 @@ def no_results_check(driver):
         driver.find_element_by_class_name('no_results')
         return 'no_results'
     except:
-        pass
+        return('none')
 
 def checkCookieBox(driver):
     try:
@@ -168,6 +193,13 @@ def getJobIdsfromDB():
     cursor.execute(query)
     origin_IDs = cursor.fetchall()
     print(len(origin_IDs), 'No of jobs present in database.')
+    return origin_IDs
+
+def checkJobIdsfromDB(uid):
+    query = f"""select id from jobs where uid='{uid}'"""
+    cursor.execute(query)
+    origin_IDs = cursor.fetchall()
+    print(len(origin_IDs), 'No jobs with this uid ', uid)
     return origin_IDs
 
 def get_company_details():
@@ -262,6 +294,7 @@ def insert_records_into_db(data):
 
     if len(company_data) > 0:
         insert_into_companies(company_data)
+    original_id = []
     for item in data:
         name = item.split('***')[0]
         city = item.split('***')[1]
@@ -270,12 +303,22 @@ def insert_records_into_db(data):
         state_code = item.split('***')[2]
         state = stateFromStateCode(state_code)
         company_id = getCompanyId(name, city, state)
+
+        jobs = []
         for i in data[item]:
             i[1] = company_id
+            original_ids = checkJobIdsfromDB(i[6])
+            if len(original_ids) > 0 or i[6] in original_id:
+                summary.write('Duplicate entry found \n')
+            else:
+                original_id.append(i[6])
+                jobs.append(i)
 
-        args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", tuple(x)).decode('utf-8') for x in data[item])
-        cursor.execute("INSERT INTO jobs (title,company_id,remote, url,description, publish_date, uid, salary_range, job_types, created_at, updated_at,source_url,average_salary) VALUES " + args_str)
-        conn.commit()
+        if len(jobs) > 0:
+            args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", tuple(x)).decode('utf-8') for x in jobs)
+            cursor.execute("INSERT INTO jobs (title,company_id,remote, url,description, publish_date, uid, salary_range, job_types, created_at, updated_at,source_url,average_salary) VALUES " + args_str)
+            conn.commit()
+
 
 def insert_into_companies(data):
     try:
@@ -392,10 +435,11 @@ summary.close()
 
 summary = open('summary.log', 'a')
 
-origin_ids = getJobIdsfromDB()
+origin_ids = []
 cities = get_cities_data()
 with_url = 0
 without_url = 0
+already_present = 0
 data = {}
 try:
     line = checkErrorLogs()
@@ -455,15 +499,16 @@ try:
                     origin_id = job.get_attribute('data-jk')
                 except:
                     continue
-                for uid in origin_ids:
-                    if origin_id == uid[0]:
-                        print('This job is already present in database.')
-                        summary.write(origin_id + ' -->  This job is already present in database.' + '\n')
-                        continue
-                    else:
-                        summary.write(origin_id + '  --> New job found' + '\n')
-                        origin_ids.append((origin_id))
-                        break
+                original_ids = checkJobIdsfromDB(origin_id)
+                if len(original_ids) > 0 or origin_id in origin_ids:
+                    already_present += 1
+                    print('This job is already present in database.')
+                    summary.write(origin_id + ' -->  This job is already present in database.' + '\n')
+                    continue
+                else:
+                    summary.write(origin_id + '  --> New job found' + '\n')
+                    origin_ids.append(origin_id)
+
                 try:
                     title = job.find_element_by_class_name('jobtitle').text
                 except:
@@ -474,7 +519,8 @@ try:
                     company = company.replace("'", "")
                 except:
                     print('Company name in exception')
-                    job.find_element_by_xpath('.//div[1]/div[1]/span').text
+                    company = job.find_element_by_xpath('.//div[1]/div[1]/span').text
+                    company = company.replace("'", "")
                 print('Company : ', company)
                 try:
                     location = job.find_element_by_class_name('location').text
@@ -692,9 +738,13 @@ try:
 
     summary.write('Inserting records into database....' + '\n')
     insert_records_into_db(data)
+    summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
+    summary.write('Script has come to an end.' + '\n')
+    summary.close()
     msg = f"""Scraping script has been completed.
               <br/> Total Jobs checked : {with_url + without_url}
-              <br/> Jobs Fetched : {with_url}"""
+              <br/> Records Fetched : {with_url}
+              <br/> Duplicate Records found : {already_present}"""
     send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Success', msg)
 
 except (TimeoutException,ElementNotInteractableException,ElementClickInterceptedException,NoSuchElementException) as exception:
@@ -705,25 +755,25 @@ except (TimeoutException,ElementNotInteractableException,ElementClickIntercepted
     insert_records_into_db(data)
     msg = f"""Please rerun the script to continue scraping.
               <br/> Total Jobs checked : {with_url + without_url}
-              <br/> Jobs Fetched : {with_url}"""
+              <br/> jobs Fetched : {with_url}
+              <br/> Duplicate Records found : {already_present}"""
+    summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
+    summary.write('Script has come to an end.' + '\n')
+    summary.close()
     send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Error', msg)
 except:
     summary.write('Inside exception 2' + '\n')
     insert_records_into_db(data)
     msg = f"""Please rerun the script to continue scraping.
-                  <br/> Total Jobs checked : {with_url + without_url}
-                  <br/> Jobs Fetched : {with_url}"""
+              <br/> Total Jobs checked : {with_url + without_url}
+              <br/> Records Fetched : {with_url}
+              <br/> Duplicate Records found : {already_present}"""
+    summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
+    summary.write('Script has come to an end.' + '\n')
+    summary.close()
     send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Error',msg)
 
 finally:
     log.close()
-    print(without_url, 'Without url')
-    summary.write(str(without_url)+ ' Without url' + '\n')
-    print(with_url, 'with url')
-    summary.write(str(with_url)+ ' with url' + '\n')
-    print(datetime.datetime.now(), 'Ending script time')
-    summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
-    summary.write('Script has come to an end.' + '\n')
-    summary.close()
     driver.quit()
 
