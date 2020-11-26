@@ -14,30 +14,30 @@ from email import encoders
 
 # ***************  For developer use only  **************
 
-# chrome_options = Options()
-# # chrome_options.add_argument("--headless")
-# chrome_options.add_argument("--start-maximised")
-# chrome_options.add_argument("--disable-gpu")
-# chrome_options.add_argument("--disable-extensions")
-# chrome_options.add_argument('--disable-dev-shm-usage')
-# chrome_options.add_argument('--no-sandbox')
-# chrome_options.add_argument("--window-size=1920,1080")
-#
-# pg_user = 'postgres'
-# pg_pass = '1234'
-# pg_db = 'job_seeker'
+chrome_options = Options()
+# chrome_options.add_argument("--headless")
+chrome_options.add_argument("--start-maximised")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--disable-extensions")
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument("--window-size=1920,1080")
+
+pg_user = 'av'
+pg_pass = 'azad'
+pg_db = 'asd'
 # ***************  For server use only  **************
 
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument("--window-size=1920,1080")
-chrome_options.add_argument("--start-maximised")
-
-pg_user = os.getenv('POSTGRES_USER')
-pg_pass = os.getenv('POSTGRES_PASSWORD')
-pg_db = 'job_portal_production'
+# chrome_options = Options()
+# chrome_options.add_argument("--headless")
+# chrome_options.add_argument('--no-sandbox')
+# chrome_options.add_argument('--disable-dev-shm-usage')
+# chrome_options.add_argument("--window-size=1920,1080")
+# chrome_options.add_argument("--start-maximised")
+#
+# pg_user = os.getenv('POSTGRES_USER')
+# pg_pass = os.getenv('POSTGRES_PASSWORD')
+# pg_db = 'job_portal_production'
 
 # ***************   for server use ends   ***************
 
@@ -219,6 +219,32 @@ def getCompanyId(company, city, state):
     print('Company Id : ', company_id[0])
     return company_id[0]
 
+def getLocationId(city,state,pin,lat,lng):
+    city=city.lower()
+    state=state.lower()
+    country='canada'
+    print('Location Id fetching funtion:',city,state,country)
+    query='''select id from locations where city=%s and state=%s and country=%s and pin=%s and latitude=%s and longitude=%s '''
+    cursor.execute(query,(city,state,country,pin,lat,lng))
+    location_id = cursor.fetchone()
+    if location_id is None:
+        insertLocationIntoDb(city,state,pin,lat,lng,country)
+    print('Location ID : ',location_id[0])
+    return  location_id[0]
+
+def insertLocationIntoDb(city,state,pin,lat,lng,country):
+    try:
+        args_str = cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s)", city, state, country, pin, lat, lng,
+                                  str(datetime.datetime.now()), str(datetime.datetime.now())).decode('utf-8')
+        cursor.execute(
+            "INSERT INTO locations ( city, state,country,pin,latitude,longitude, created_at, updated_at) VALUES " + args_str)
+        conn.commit()
+        location_id = cursor.lastrowid
+        print('New Location created inserted successfully')
+        return location_id[0]
+    except (Exception, psycopg2.Error) as error:
+        print('Error in psql : ', error)
+
 def checkErrorLogs():
     try:
         check = open("Error_Check.log", "r")
@@ -287,9 +313,12 @@ def insert_records_into_db(data):
         country = 'Canada'
 
         comp_id = getCompanyId(name,city,state)
+        location_id = getLocationId(city,state,pin,lat,lng)
+
         print('Checked if company already exists', comp_id)
+        print('Checked if Location Already exists:',location_id)
         if comp_id is None:
-            temp_tuple = (name, city, state,pin,lat,lng, country, str(datetime.datetime.now()), str(datetime.datetime.now()), fileName)
+            temp_tuple = (name, city, state,pin,lat,lng, country, str(datetime.datetime.now()), str(datetime.datetime.now()), fileName,location_id)
             company_data.append(temp_tuple)
 
     if len(company_data) > 0:
@@ -298,15 +327,29 @@ def insert_records_into_db(data):
     for item in data:
         name = item.split('***')[0]
         city = item.split('***')[1]
-        if city is 'None':
-            city =''
         state_code = item.split('***')[2]
         state = stateFromStateCode(state_code)
+        if city is 'None':
+            city = ''
+            pin = ''
+            lat = 'NAN'
+            lng = 'NAN'
+        else:
+            my_current_city_data = getPinLatLngFromCityFile(cities, city)
+            pin = my_current_city_data[0]
+            lat = my_current_city_data[1]
+            lng = my_current_city_data[2]
+            if pin is None or pin == '':
+                pin = ''
+                lat = 'NAN'
+                lng = 'NAN'
         company_id = getCompanyId(name, city, state)
+        location_id = getLocationId(city,state,pin,lat,lng)
 
         jobs = []
         for i in data[item]:
             i[1] = company_id
+            i.append(location_id)
             original_ids = checkJobIdsfromDB(i[6])
             if len(original_ids) > 0 or i[6] in original_id:
                 summary.write('Duplicate entry found \n')
@@ -315,8 +358,8 @@ def insert_records_into_db(data):
                 jobs.append(i)
 
         if len(jobs) > 0:
-            args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", tuple(x)).decode('utf-8') for x in jobs)
-            cursor.execute("INSERT INTO jobs (title,company_id,remote, url,description, publish_date, uid, salary_range, job_types, created_at, updated_at,source_url,average_salary) VALUES " + args_str)
+            args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", tuple(x)).decode('utf-8') for x in jobs)
+            cursor.execute("INSERT INTO jobs (title,company_id,remote, url,description, publish_date, uid, salary_range, job_types, created_at, updated_at,source_url,average_salary,location_id) VALUES " + args_str)
             conn.commit()
 
 
@@ -421,13 +464,13 @@ def getDataFromNewTab(driver, company):
         return 'continue'
 
 # # ***************  For developer use only  **************
-# chromedriver = "/Users/mac/Downloads/chromedriver 2" #replace chromedriver path if not same with string
-# os.environ["webdriver.chrome.driver"] = chromedriver
-# driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
+chromedriver = "/usr/bin/chromedriver" #replace chromedriver path if not same with string
+os.environ["webdriver.chrome.driver"] = chromedriver
+driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
 
  # ***************  For server use only  ****************
 
-driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
+# driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
 
 summary = open('summary.log', 'w')
 summary.write(str(datetime.date.today()) + '\n')
