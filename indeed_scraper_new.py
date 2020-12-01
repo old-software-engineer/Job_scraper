@@ -14,30 +14,30 @@ from email import encoders
 
 # ***************  For developer use only  **************
 
-chrome_options = Options()
-# chrome_options.add_argument("--headless")
-chrome_options.add_argument("--start-maximised")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument("--window-size=1920,1080")
-
-pg_user = 'av'
-pg_pass = 'azad'
-pg_db = 'asd'
+# chrome_options = Options()
+# # chrome_options.add_argument("--headless")
+# chrome_options.add_argument("--start-maximised")
+# chrome_options.add_argument("--disable-gpu")
+# chrome_options.add_argument("--disable-extensions")
+# chrome_options.add_argument('--disable-dev-shm-usage')
+# chrome_options.add_argument('--no-sandbox')
+# chrome_options.add_argument("--window-size=1920,1080")
+#
+# pg_user = 'av'
+# pg_pass = 'azad'
+# pg_db = 'test_nelmon'
 # ***************  For server use only  **************
 
-# chrome_options = Options()
-# chrome_options.add_argument("--headless")
-# chrome_options.add_argument('--no-sandbox')
-# chrome_options.add_argument('--disable-dev-shm-usage')
-# chrome_options.add_argument("--window-size=1920,1080")
-# chrome_options.add_argument("--start-maximised")
-#
-# pg_user = os.getenv('POSTGRES_USER')
-# pg_pass = os.getenv('POSTGRES_PASSWORD')
-# pg_db = 'job_portal_production'
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument("--window-size=1920,1080")
+chrome_options.add_argument("--start-maximised")
+
+pg_user = os.getenv('POSTGRES_USER')
+pg_pass = os.getenv('POSTGRES_PASSWORD')
+pg_db = 'job_portal_production'
 
 # ***************   for server use ends   ***************
 
@@ -69,10 +69,10 @@ def send_mail(_mail, currentSubject,currentMsg):
     try:
         msg = MIMEMultipart()
         message = currentMsg
-        username = "sharma.paras4444@gmail.com"
-        password = "paras.code.com@123"
+        username = "azadveer@codegaragetech.com"
+        password = "azadveer@123"
         smtphost = "smtp.gmail.com:587"
-        msg["From"] = "sharma.paras4444@gmail.com"
+        msg["From"] = "azadveer@codegaragetech.com"
         msg["To"] = _mail
         msg["Subject"] = currentSubject
         msg.attach(MIMEText(message, 'html'))
@@ -100,8 +100,9 @@ def send_mail(_mail, currentSubject,currentMsg):
         # -------------INCLUDE THIS FOR ATTACHMENT ENDS------------------
 
         server = smtplib.SMTP(smtphost)
+        server.ehlo()
         server.starttls()
-        server.login(username, password)
+        server.login(user=username,password=password)
         server.sendmail(msg['From'], [msg['To']], msg.as_string())
         print('Sent mail successfully')
     except:
@@ -203,16 +204,16 @@ def checkJobIdsfromDB(uid):
     return origin_IDs
 
 def get_company_details():
-    query = f"select name,city,state from companies"
+    query = f"select name from companies"
     cursor.execute(query)
     companies = cursor.fetchall()
     print(len(companies), 'No of jobs present in database.')
     return companies
 
-def getCompanyId(company, city, state):
-    print('Company in get company function : ', company, city, state)
-    query = '''select id from companies where name=%s and city=%s and state=%s'''
-    cursor.execute(query, (company, city, state))
+def getCompanyId(company):
+    print('Company in get company function : ',company)
+    query = '''select id from companies where name= %s '''
+    cursor.execute(query,(company,))
     company_id = cursor.fetchone()
     if company_id is None:
         return None
@@ -228,20 +229,18 @@ def getLocationId(city,state,pin,lat,lng):
     cursor.execute(query,(city,state,country,pin,lat,lng))
     location_id = cursor.fetchone()
     if location_id is None:
-        insertLocationIntoDb(city,state,pin,lat,lng,country)
-    print('Location ID : ',location_id[0])
-    return  location_id[0]
+        location_id =insertLocationIntoDb(city,state,pin,lat,lng,country)
+    print('Location ID : ',location_id)
+    return  location_id
 
 def insertLocationIntoDb(city,state,pin,lat,lng,country):
     try:
-        args_str = cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s)", city, state, country, pin, lat, lng,
-                                  str(datetime.datetime.now()), str(datetime.datetime.now())).decode('utf-8')
-        cursor.execute(
-            "INSERT INTO locations ( city, state,country,pin,latitude,longitude, created_at, updated_at) VALUES " + args_str)
+        query= ''' INSERT INTO locations ( city, state,country,pin,latitude,longitude, created_at, updated_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s ) RETURNING id; '''
+        cursor.execute(query,(city,state,country,pin,lat,lng,str(datetime.datetime.now()),str(datetime.datetime.now())) )
+        location_id = cursor.fetchone()[0]
         conn.commit()
-        location_id = cursor.lastrowid
-        print('New Location created inserted successfully')
-        return location_id[0]
+        print('New Location created inserted successfully',location_id)
+        return location_id
     except (Exception, psycopg2.Error) as error:
         print('Error in psql : ', error)
 
@@ -312,13 +311,13 @@ def insert_records_into_db(data):
             lng = 'NAN'
         country = 'Canada'
 
-        comp_id = getCompanyId(name,city,state)
+        comp_id = getCompanyId(name)
         location_id = getLocationId(city,state,pin,lat,lng)
 
         print('Checked if company already exists', comp_id)
         print('Checked if Location Already exists:',location_id)
         if comp_id is None:
-            temp_tuple = (name, city, state,pin,lat,lng, country, str(datetime.datetime.now()), str(datetime.datetime.now()), fileName,location_id)
+            temp_tuple = (name,str(datetime.datetime.now()),str(datetime.datetime.now()), fileName,location_id)
             company_data.append(temp_tuple)
 
     if len(company_data) > 0:
@@ -343,7 +342,7 @@ def insert_records_into_db(data):
                 pin = ''
                 lat = 'NAN'
                 lng = 'NAN'
-        company_id = getCompanyId(name, city, state)
+        company_id = getCompanyId(name)
         location_id = getLocationId(city,state,pin,lat,lng)
 
         jobs = []
@@ -365,8 +364,8 @@ def insert_records_into_db(data):
 
 def insert_into_companies(data):
     try:
-        args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", x).decode('utf-8') for x in data)
-        cursor.execute("INSERT INTO companies (name, city, state,pin,latitude,longitude, country, created_at, updated_at, image_link) VALUES " + args_str)
+        args_str = ','.join(cursor.mogrify("(%s,%s,%s,%s,%s)", x).decode('utf-8') for x in data)
+        cursor.execute("INSERT INTO companies (name, created_at, updated_at, image_link,location_id) VALUES " + args_str)
         conn.commit()
         print('New companies inserted successfully')
     except (Exception, psycopg2.Error) as error:
@@ -464,13 +463,13 @@ def getDataFromNewTab(driver, company):
         return 'continue'
 
 # # ***************  For developer use only  **************
-chromedriver = "/usr/bin/chromedriver" #replace chromedriver path if not same with string
-os.environ["webdriver.chrome.driver"] = chromedriver
-driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
+# chromedriver = "/usr/bin/chromedriver" #replace chromedriver path if not same with string
+# os.environ["webdriver.chrome.driver"] = chromedriver
+# driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
 
  # ***************  For server use only  ****************
 
-# driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
+driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
 
 summary = open('summary.log', 'w')
 summary.write(str(datetime.date.today()) + '\n')
@@ -788,7 +787,7 @@ try:
               <br/> Total Jobs checked : {with_url + without_url}
               <br/> Records Fetched : {with_url}
               <br/> Duplicate Records found : {already_present}"""
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Success', msg)
+    send_mail('azadveer.hakuwala@gmail.com', 'Indeed Scraper Daily: Success', msg)
 
 except (TimeoutException,ElementNotInteractableException,ElementClickInterceptedException,NoSuchElementException) as exception:
     # insert fetched records in database.
@@ -803,7 +802,7 @@ except (TimeoutException,ElementNotInteractableException,ElementClickIntercepted
     summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
     summary.write('Script has come to an end.' + '\n')
     summary.close()
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Daily: Error', msg)
+    send_mail('azadveer.hakuwala@gmail.com', 'Indeed Scraper Daily: Error', msg)
 except:
     summary.write('Inside exception 2' + '\n')
     insert_records_into_db(data)
@@ -814,7 +813,7 @@ except:
     summary.write(str(datetime.datetime.now())+  ' Ending script time' + '\n')
     summary.write('Script has come to an end.' + '\n')
     summary.close()
-    send_mail('ankitmahajan478@gmail.com', 'Indeed Scraper Custom: Error',msg)
+    send_mail('azadveer.hakuwala@gmail.com', 'Indeed Scraper Custom: Error',msg)
 
 finally:
     log.close()
