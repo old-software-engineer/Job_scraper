@@ -4,6 +4,9 @@ from selenium import webdriver
 import os,time,datetime
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException,ElementNotInteractableException,ElementClickInterceptedException, NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 import psycopg2
 import urllib.request as urllib
 import smtplib
@@ -27,7 +30,7 @@ from email import encoders
 # pg_pass = 'azad'
 # pg_db = 'test_nelmon'
 # ***************  For server use only  **************
-
+#
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument('--no-sandbox')
@@ -38,7 +41,7 @@ chrome_options.add_argument("--start-maximised")
 pg_user = os.getenv('POSTGRES_USER')
 pg_pass = os.getenv('POSTGRES_PASSWORD')
 pg_db = 'job_portal_production'
-
+#
 # ***************   for server use ends   ***************
 
 print(datetime.datetime.now(), 'Starting script time')
@@ -503,14 +506,14 @@ try:
                         continue
                     print('Status is success, so going normally')
                     summary.write('There are no previous errors, so going normally' + '\n')
-                    driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=1')
+                    driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=14')
                 else:
                     continue
                 line = 'normal'
             else:
                 print('Going normally')
                 summary.write('There are no previous errors, so going normally' + '\n')
-                driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=1')
+                driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=14')
         except:
             print('Internet is not connected, or may be slow.')
             summary.write('Internet is not connected, or may be slow.' + '\n')
