@@ -1,0 +1,60 @@
+2020-12-01
+Finance starting https://ca.indeed.com/jobs?q=Finance&fromage=14&start=20
+Finance continuing https://ca.indeed.com/jobs?q=Finance&fromage=14&start=20
+Starting scraping page 1 : 2020-12-01 18:10:51.942998
+e8f1619bcae2f7ea -->  This job is already present in database.
+72626ed4cf8e8a2b  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+3a8af8d5344fd64f -->  This job is already present in database.
+91e6efe6585effdc -->  This job is already present in database.
+da103b30afee4a0a  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+4a433d1c0b9ea28e  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+82e169c2e8416274  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+6298c8a5574dc2a1 -->  This job is already present in database.
+d0c29ef51f6175cc -->  This job is already present in database.
+4ee7df183cf8693e  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+901b51ab1a6bae0b  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Description found for the job.
+Closing job details div
+Closed job details div
+73e8bb48a132acc9 -->  This job is already present in database.
+cc3efc38fec81e3b -->  This job is already present in database.
+91ecce59d77bedfc  --> New job found
+Title, Company, location is found...
+Salary range and job type sections passed.
+Clicked on job for further details
+Inside exception 2
+2020-12-01 18:11:06.108953 Ending script time
+Script has come to an end.
