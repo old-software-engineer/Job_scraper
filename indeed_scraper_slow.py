@@ -16,32 +16,32 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 # ***************  For developer use only  **************
-
-chrome_options = Options()
-# chrome_options.add_argument("--headless")
-chrome_options.add_argument("--start-maximised")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument('--disable-dev-shm-usage')
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument("--window-size=1920,1080")
-
-pg_user = 'av'
-pg_pass = 'azad'
-pg_db = 'test_nelmon'
-# ***************  For server use only  **************
 #
 # chrome_options = Options()
-# chrome_options.add_argument("--headless")
-# chrome_options.add_argument('--no-sandbox')
-# chrome_options.add_argument('--disable-dev-shm-usage')
-# chrome_options.add_argument("--window-size=1920,1080")
+# # chrome_options.add_argument("--headless")
 # chrome_options.add_argument("--start-maximised")
+# chrome_options.add_argument("--disable-gpu")
+# chrome_options.add_argument("--disable-extensions")
+# chrome_options.add_argument('--disable-dev-shm-usage')
+# chrome_options.add_argument('--no-sandbox')
+# chrome_options.add_argument("--window-size=1920,1080")
 #
-# pg_user = os.getenv('POSTGRES_USER')
-# pg_pass = os.getenv('POSTGRES_PASSWORD')
-# pg_db = 'job_portal_production'
+# pg_user = 'av'
+# pg_pass = 'azad'
+# pg_db = 'test_nelmon'
+# ***************  For server use only  **************
 #
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument("--window-size=1920,1080")
+chrome_options.add_argument("--start-maximised")
+
+pg_user = os.getenv('POSTGRES_USER')
+pg_pass = os.getenv('POSTGRES_PASSWORD')
+pg_db = 'job_portal_production'
+
 # ***************   for server use ends   ***************
 
 print(datetime.datetime.now(), 'Starting script time')
@@ -474,13 +474,13 @@ def getDataFromNewTab(driver, company):
         return 'continue'
 
 # # ***************  For developer use only  **************
-chromedriver = "/usr/bin/chromedriver" #replace chromedriver path if not same with string
-os.environ["webdriver.chrome.driver"] = chromedriver
-driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
+# chromedriver = "/usr/bin/chromedriver" #replace chromedriver path if not same with string
+# os.environ["webdriver.chrome.driver"] = chromedriver
+# driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
 
  # ***************  For server use only  ****************
 
-# driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
+driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
 
 summary = open('summary.log', 'w')
 summary.write(str(datetime.date.today()) + '\n')
