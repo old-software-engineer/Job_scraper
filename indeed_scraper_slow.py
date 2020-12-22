@@ -516,7 +516,7 @@ try:
                         continue
                     print('Status is success, so going normally')
                     summary.write('There are no previous errors, so going normally' + '\n')
-                    driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=14')
+                    driver.get(f'https://ca.indeed.com/jobs?q={keyword}&fromage=1')
                     time.sleep(3)
                 else:
                     continue
