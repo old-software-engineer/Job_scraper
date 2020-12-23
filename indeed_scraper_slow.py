@@ -16,7 +16,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 # ***************  For developer use only  **************
-#
+
 # chrome_options = Options()
 # # chrome_options.add_argument("--headless")
 # chrome_options.add_argument("--start-maximised")
@@ -83,8 +83,8 @@ def send_mail(_mail, currentSubject,currentMsg):
 
         # -------------INCLUDE THIS FOR ATTACHMENT------------------
         # open the file to be sent
-        filename = "summary.log"
-        attachment = open("summary.log", "rb")
+        filename = "summary_slow.log"
+        attachment = open("summary_slow.log", "rb")
 
         # instance of MIMEBase and named as p
         p = MIMEBase('application', 'octet-stream')
@@ -255,7 +255,7 @@ def insertLocationIntoDb(city,state,pin,lat,lng,country):
 
 def checkErrorLogs():
     try:
-        check = open("Error_Check.log", "r")
+        check = open("Error_Check_slow.log", "r")
     except:
         return 'normal'
     lines = check.readlines()
@@ -482,11 +482,11 @@ def getDataFromNewTab(driver, company):
 
 driver = webdriver.Chrome(executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
 
-summary = open('summary.log', 'w')
+summary = open('summary_slow.log', 'w')
 summary.write(str(datetime.date.today()) + '\n')
 summary.close()
 
-summary = open('summary.log', 'a')
+summary = open('summary_slow.log', 'a')
 
 origin_ids = []
 cities = get_cities_data()
@@ -496,8 +496,8 @@ already_present = 0
 data = {}
 try:
     line = checkErrorLogs()
-    make_new_log("Error_Check.log")
-    log = open('Error_Check.log', 'a')
+    make_new_log("Error_Check_slow.log")
+    log = open('Error_Check_slow.log', 'a')
     for keyword in keywords:
         try:
             if line != 'normal':
